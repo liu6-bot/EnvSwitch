@@ -28,6 +28,21 @@ SPEC = ROOT / "EnvSwitch.spec"
 DIST = ROOT / "dist"
 
 
+def utf8_console() -> None:
+    """把 stdout/stderr 切到 UTF-8，避免中文提示把脚本自己弄崩。
+
+    非中文版 Windows 的控制台编码是 cp1252，print 中文会抛 UnicodeEncodeError；
+    GitHub Actions 的 windows-latest 正是这种情况（打包明明成功了，却在打印
+    「打包完成：…」这一步挂掉）。这里统一改成 UTF-8，装不下的字符降级成 '?'，
+    只影响输出观感，绝不会中断流程。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except Exception:  # noqa: BLE001  —— 老版本或已被重定向的流，忽略
+            pass
+
+
 def sh(cmd, **kw):
     print("$", " ".join(str(c) for c in cmd))
     return subprocess.run(cmd, **kw).returncode
@@ -81,6 +96,7 @@ def build(onedir: bool) -> int:
 
 
 def main() -> int:
+    utf8_console()
     ap = argparse.ArgumentParser(description="EnvSwitch 打包脚本")
     ap.add_argument("--onedir", action="store_true", help="打目录版而不是单文件版")
     ap.add_argument("--check", action="store_true", help="只检查打包环境")

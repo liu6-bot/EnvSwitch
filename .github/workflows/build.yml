@@ -13,6 +13,10 @@ jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      # 运行器的控制台编码不一定是 UTF-8（windows-latest 是 cp1252），
+      # 脚本里的中文提示会抛 UnicodeEncodeError。这里统一指定成 UTF-8。
+      PYTHONIOENCODING: utf-8
     strategy:
       fail-fast: false
       matrix:
@@ -34,6 +38,9 @@ jobs:
       - name: Install tkinter (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y python3-tk
+
+      - name: Syntax check
+        run: python -m compileall -q envswitch main.py build_exe.py tools
 
       - name: Install PyInstaller
         run: pip install pyinstaller
