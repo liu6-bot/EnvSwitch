@@ -1,0 +1,19 @@
+{
+  "id": "php",
+  "name": "PHP",
+  "icon": "🐘",
+  "entry": "file",
+  "home_var": "PHP_HOME",
+  "file_pattern": "php(\\.exe)?",
+  "bin_names": ["php"],
+  "version_cmd": ["{bin}", "--version"],
+  "version_regex": "PHP (\\d+\\.\\d+(\\.\\d+)?)",
+  "path_entries": ["{home}"],
+  "conflict_keywords": ["php"],
+  "search_roots": {
+    "windows": ["C:\\php*", "C:\\xampp\\php", "~\\scoop\\apps\\php", "C:\\wamp64\\bin\\php"],
+    "macos": ["/usr/local/bin", "/opt/homebrew/bin"],
+    "linux": ["/usr/bin", "/usr/local/bin", "~/.phpenv/versions"]
+  },
+  "notes": "文件模式示例：直接找 php 主程序，所在目录前置到 PATH。"
+}

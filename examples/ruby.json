@@ -1,0 +1,19 @@
+{
+  "id": "ruby",
+  "name": "Ruby",
+  "icon": "◆",
+  "entry": "dir",
+  "home_var": "RUBY_HOME",
+  "detect": "bin/ruby{ext}",
+  "bin_names": ["ruby"],
+  "version_cmd": ["{bin}", "--version"],
+  "version_regex": "ruby (\\d+\\.\\d+\\.\\d+)",
+  "path_entries": ["{home}/bin"],
+  "conflict_keywords": ["ruby"],
+  "search_roots": {
+    "windows": ["C:\\Ruby*", "~\\scoop\\apps\\ruby", "~\\tools\\ruby"],
+    "macos": ["~/.rbenv/versions", "/opt/homebrew/opt", "/usr/local/opt"],
+    "linux": ["~/.rbenv/versions", "~/.rvm/rubies", "/usr/lib/ruby"]
+  },
+  "notes": "覆盖 rubyinstaller（Windows）、rbenv、rvm 的常见安装位置。"
+}
