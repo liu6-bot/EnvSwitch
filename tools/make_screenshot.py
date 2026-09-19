@@ -1,10 +1,13 @@
 """抓取 EnvSwitch 主界面的真机截图，保存到 docs/screenshot.png（供 README 使用）。
 
 用法：
-    python tools/make_screenshot.py [输出路径] [--tool java]
+    python tools/make_screenshot.py [输出路径] [--tool java] [--size 1340x800]
 
 会做的事情：把配置里的「默认选中工具」临时改成 --tool 指定的那个 -> 启动 main.py
--> 等窗口出现并完成扫描 -> 把窗口提到最前 -> 抓图（自动剔除窗口阴影）-> 关窗口 -> 还原配置。
+-> 等窗口出现并完成扫描 -> 按 --size 调整窗口大小 -> 把窗口提到最前
+-> 抓图（自动剔除窗口阴影）-> 关窗口 -> 还原配置。
+
+--size 写的是「客户区」尺寸（不含标题栏/边框），不传就保持程序自己的默认大小。
 
 只在 Windows 上有意义；抓图依赖 Pillow（`pip install pillow`）。
 """
@@ -29,6 +32,15 @@ dwmapi = ctypes.windll.dwmapi
 
 DWMWA_EXTENDED_FRAME_BOUNDS = 9
 SW_RESTORE = 9
+SWP_NOZORDER = 0x0004
+SWP_NOACTIVATE = 0x0010
+GWL_STYLE = -16
+GWL_EXSTYLE = -20
+
+
+class _RECT(ctypes.Structure):
+    _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
 
 
 def _find_window(title: str, timeout: float = 45.0) -> int:
@@ -55,6 +67,29 @@ def _frame_bounds(hwnd: int):
     if rc.right - rc.left < 100 or rc.bottom - rc.top < 100:
         return None
     return (rc.left, rc.top, rc.right, rc.bottom)
+
+
+def _resize_client(hwnd: int, cw: int, ch: int) -> bool:
+    """把窗口调成「客户区约 cw x ch」并居中；超出屏幕时自动收敛。"""
+    try:
+        style = user32.GetWindowLongW(hwnd, GWL_STYLE)
+        exstyle = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        rc = _RECT(0, 0, int(cw), int(ch))
+        if not user32.AdjustWindowRectEx(ctypes.byref(rc), style, False, exstyle):
+            return False
+        w = rc.right - rc.left
+        h = rc.bottom - rc.top
+        sw = user32.GetSystemMetrics(0)
+        sh = user32.GetSystemMetrics(1)
+        w = min(w, sw)
+        h = min(h, sh)
+        x = max(0, (sw - w) // 2)
+        y = max(0, (sh - h) // 2 - 20)
+        user32.SetWindowPos(hwnd, 0, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        print("调整窗口尺寸失败（忽略）：", exc)
+        return False
 
 
 def _set_last_tool(tool_id: str):
@@ -91,6 +126,18 @@ def main(argv=None) -> int:
         if i + 1 < len(argv):
             tool_id = argv[i + 1]
             del argv[i:i + 2]
+    size = None
+    if "--size" in argv:
+        i = argv.index("--size")
+        if i + 1 < len(argv):
+            raw = argv[i + 1].lower().replace("*", "x")
+            try:
+                cw, ch = (int(v) for v in raw.split("x", 1))
+                size = (cw, ch)
+            except Exception:  # noqa: BLE001
+                print("--size 格式应为 宽x高，例如 1340x800")
+                return 2
+            del argv[i:i + 2]
     out = argv[0] if argv else DEFAULT_OUT
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
@@ -111,6 +158,9 @@ def main(argv=None) -> int:
         # 给扫描/探测留出时间，界面稳定后再抓，否则会拍到空列表
         time.sleep(9)
         user32.ShowWindow(hwnd, SW_RESTORE)
+        if size:
+            _resize_client(hwnd, size[0], size[1])
+            time.sleep(1.2)
         user32.SetForegroundWindow(hwnd)
         time.sleep(1.5)
 

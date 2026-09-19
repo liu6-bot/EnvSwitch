@@ -43,14 +43,12 @@
 
 ## 界面
 
+![EnvSwitch 主界面](docs/screenshot.png)
+
 > 左侧是工具列表，右侧是该工具的所有安装：带 `●` 的是**命令行真正生效**的版本，
 > 带 `○` 的是主目录变量指向、却被 `PATH` 里更靠前的条目挡住的版本，双击即切换。
-
-<!-- 截图：在 Windows 上解锁屏幕后执行
-       python tools/make_screenshot.py --tool java
-     会生成 docs/screenshot.png，然后把下面这行取消注释即可。
-![screenshot](docs/screenshot.png)
--->
+>
+> 截图可以用 `python tools/make_screenshot.py --tool java --size 1340x800` 一键重新生成。
 
 ## 快速开始
 
